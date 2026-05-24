@@ -1,0 +1,48 @@
+@import "tailwindcss";
+
+:root {
+  --paper: #f5f1e9;
+  --ink: #1a1a1a;
+  --accent: #a68e6b;
+  --accent-dark: #8a7355;
+  --muted: #6b6560;
+  --border: #1a1a1a;
+  --tan: #e8dfd0;
+  --tan-dark: #d4c4a8;
+}
+
+@theme inline {
+  --color-paper: var(--paper);
+  --color-ink: var(--ink);
+  --color-accent: var(--accent);
+  --color-accent-dark: var(--accent-dark);
+  --color-muted: var(--muted);
+  --color-tan: var(--tan);
+  --color-tan-dark: var(--tan-dark);
+  --font-serif: var(--font-source-serif), Georgia, serif;
+  --font-sans: var(--font-barlow), system-ui, sans-serif;
+}
+
+body {
+  background-color: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-sans), system-ui, sans-serif;
+}
+
+/* Subtle newspaper texture */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.03;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-serif), Georgia, serif;
+}
