@@ -59,7 +59,7 @@ flowchart LR
 
 ### Ingesta
 
-- Vercel Cron cada 6 h → `GET /api/cron/ingest`
+- Vercel Cron una vez al día (8:00 a.m. hora Costa Rica) → `GET /api/cron/ingest`
 - Header: `Authorization: Bearer <CRON_SECRET>`
 - `rss-parser` + `@mozilla/readability` + `cheerio`
 - Dedupe por `source_url`
