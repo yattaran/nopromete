@@ -15,41 +15,79 @@ import { heroImageForCategory } from "@/lib/utils/hero-image";
 async function requireAuth() {
   const session = await auth();
   if (!session) {
-    throw new Error("Unauthorized");
+    redirect("/admin/login");
   }
+}
+
+function revalidatePublicPages(slug?: string) {
+  revalidatePath("/");
+  revalidatePath("/noticias");
+  if (slug) {
+    revalidatePath(`/noticias/${slug}`);
+  }
+}
+
+async function setStatus(id: string, status: PostStatus) {
+  await requireAuth();
+
+  const db = requireDb();
+  const [post] = await db
+    .select({ slug: posts.slug })
+    .from(posts)
+    .where(eq(posts.id, id))
+    .limit(1);
+
+  if (!post) {
+    throw new Error("Post not found");
+  }
+
+  await updatePostStatus(id, status);
+  revalidatePath("/admin");
+  revalidatePath(`/admin/posts/${id}`);
+  revalidatePublicPages(post.slug);
 }
 
 export async function logoutAction() {
   await signOut({ redirectTo: "/admin/login" });
 }
 
-async function setStatus(id: string, status: PostStatus) {
-  await requireAuth();
-  await updatePostStatus(id, status);
-  revalidatePath("/admin");
-  revalidatePath("/");
-  revalidatePath(`/admin/posts/${id}`);
+export async function approvePostById(postId: string) {
+  await setStatus(postId, "approved");
 }
 
+export async function publishPostById(postId: string) {
+  await setStatus(postId, "published");
+  redirect("/admin");
+}
+
+export async function rejectPostById(postId: string) {
+  await setStatus(postId, "rejected");
+  redirect("/admin");
+}
+
+/** @deprecated Use approvePostById — kept for any old forms */
 export async function approvePost(formData: FormData) {
-  const id = formData.get("id") as string;
-  await setStatus(id, "approved");
+  const id = formData.get("id");
+  if (typeof id !== "string" || !id) throw new Error("Missing post id");
+  await approvePostById(id);
 }
 
 export async function publishPost(formData: FormData) {
-  const id = formData.get("id") as string;
-  await setStatus(id, "published");
-  redirect("/admin");
+  const id = formData.get("id");
+  if (typeof id !== "string" || !id) throw new Error("Missing post id");
+  await publishPostById(id);
 }
 
 export async function rejectPost(formData: FormData) {
-  const id = formData.get("id") as string;
-  await setStatus(id, "rejected");
-  redirect("/admin");
+  const id = formData.get("id");
+  if (typeof id !== "string" || !id) throw new Error("Missing post id");
+  await rejectPostById(id);
 }
 
 export async function regeneratePost(formData: FormData) {
-  const id = formData.get("id") as string;
+  const id = formData.get("id");
+  if (typeof id !== "string" || !id) throw new Error("Missing post id");
+
   await requireAuth();
   const db = requireDb();
 

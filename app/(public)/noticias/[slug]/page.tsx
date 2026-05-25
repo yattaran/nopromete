@@ -6,14 +6,14 @@ import { ArticlePageMeta } from "@/components/article/ArticlePageMeta";
 import { ArticleSections } from "@/components/article/ArticleSections";
 import { ArticleShareButtons } from "@/components/article/ArticleShareButtons";
 import { SourceAttribution } from "@/components/article/SourceAttribution";
-import { getAllPublishedSlugs, getArticleBySlug } from "@/lib/data/posts";
+import { getAllPublishedSlugs, getArticleBySlug, hasDatabase } from "@/lib/data/posts";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
 }
 
 export async function generateStaticParams() {
-  if (process.env.DATABASE_URL) return [];
+  if (hasDatabase()) return [];
   const slugs = await getAllPublishedSlugs();
   return slugs.map((slug) => ({ slug }));
 }

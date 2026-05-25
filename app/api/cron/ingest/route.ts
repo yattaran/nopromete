@@ -16,8 +16,12 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  if (!process.env.DATABASE_URL) {
-    return NextResponse.json({ error: "DATABASE_URL not configured" }, { status: 500 });
+  const { getDatabaseUrl } = await import("@/lib/db");
+  if (!getDatabaseUrl()) {
+    return NextResponse.json(
+      { error: "DATABASE_URL missing or invalid (expected postgresql://...)" },
+      { status: 500 },
+    );
   }
 
   if (!process.env.GEMINI_API_KEY) {

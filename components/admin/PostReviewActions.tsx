@@ -1,9 +1,9 @@
 import Link from "next/link";
 import {
-  approvePost,
-  publishPost,
+  approvePostById,
+  publishPostById,
   regeneratePost,
-  rejectPost,
+  rejectPostById,
 } from "@/app/admin/actions";
 import type { PostStatus } from "@/lib/db/schema";
 
@@ -17,8 +17,7 @@ export function PostReviewActions({ postId, status }: PostReviewActionsProps) {
     <div className="flex flex-wrap gap-3">
       {status === "pending_review" && (
         <>
-          <form action={approvePost}>
-            <input type="hidden" name="id" value={postId} />
+          <form action={approvePostById.bind(null, postId)}>
             <button
               type="submit"
               className="bg-accent px-4 py-2 text-xs font-semibold tracking-wide text-paper uppercase"
@@ -26,8 +25,7 @@ export function PostReviewActions({ postId, status }: PostReviewActionsProps) {
               Aprobar
             </button>
           </form>
-          <form action={rejectPost}>
-            <input type="hidden" name="id" value={postId} />
+          <form action={rejectPostById.bind(null, postId)}>
             <button
               type="submit"
               className="border border-ink px-4 py-2 text-xs font-semibold tracking-wide uppercase"
@@ -39,8 +37,7 @@ export function PostReviewActions({ postId, status }: PostReviewActionsProps) {
       )}
 
       {status === "approved" && (
-        <form action={publishPost}>
-          <input type="hidden" name="id" value={postId} />
+        <form action={publishPostById.bind(null, postId)}>
           <button
             type="submit"
             className="bg-ink px-4 py-2 text-xs font-semibold tracking-wide text-paper uppercase"

@@ -1,9 +1,13 @@
 import { and, desc, eq, ne } from "drizzle-orm";
-import { getDb, requireDb } from "@/lib/db";
+import { getDb, getDatabaseUrl, requireDb } from "@/lib/db";
 import { posts, rawArticles } from "@/lib/db/schema";
 import type { Post, PostStatus } from "@/lib/db/schema";
 import * as mock from "@/lib/mock/articles";
 import type { Article, CategorySlug } from "@/lib/types/article";
+
+function useMockArticles(): boolean {
+  return !getDatabaseUrl();
+}
 
 function isCategorySlug(value: string): value is CategorySlug {
   return [
@@ -38,21 +42,14 @@ function rowToArticle(row: Post): Article {
 }
 
 export function hasDatabase(): boolean {
-  return Boolean(process.env.DATABASE_URL);
+  return Boolean(getDatabaseUrl());
 }
 
-export async function getFeaturedArticle(): Promise<Article> {
+export async function getFeaturedArticle(): Promise<Article | null> {
+  if (useMockArticles()) return mock.getFeaturedArticle();
+
   const db = getDb();
-  if (!db) return mock.getFeaturedArticle();
-
-  const [featured] = await db
-    .select()
-    .from(posts)
-    .where(and(eq(posts.status, "published"), eq(posts.featured, true)))
-    .orderBy(desc(posts.publishedAt))
-    .limit(1);
-
-  if (featured) return rowToArticle(featured);
+  if (!db) return null;
 
   const [latest] = await db
     .select()
@@ -61,45 +58,54 @@ export async function getFeaturedArticle(): Promise<Article> {
     .orderBy(desc(posts.publishedAt))
     .limit(1);
 
-  if (latest) return rowToArticle(latest);
-  return mock.getFeaturedArticle();
+  return latest ? rowToArticle(latest) : null;
 }
 
 export async function getGridArticles(): Promise<Article[]> {
+  if (useMockArticles()) return mock.getGridArticles();
+
   const db = getDb();
-  if (!db) return mock.getGridArticles();
+  if (!db) return [];
 
   const featured = await getFeaturedArticle();
+  const gridConditions = [eq(posts.status, "published")];
+  if (featured) {
+    gridConditions.push(ne(posts.slug, featured.slug));
+  }
+
   const rows = await db
     .select()
     .from(posts)
-    .where(and(eq(posts.status, "published"), ne(posts.slug, featured.slug)))
+    .where(and(...gridConditions))
     .orderBy(desc(posts.publishedAt))
     .limit(3);
 
-  if (rows.length === 0) return mock.getGridArticles();
   return rows.map(rowToArticle);
 }
 
 export async function getFeaturedDonZopiQuote(): Promise<string> {
   const featured = await getFeaturedArticle();
-  return featured.donZopiQuote;
+  if (featured) return featured.donZopiQuote;
+  if (useMockArticles()) return mock.getFeaturedDonZopiQuote();
+  return "Todavía no hay noticias publicadas. Don Zopi está en la torre esperando el primer cable.";
 }
 
 export async function getArticleBySlug(slug: string): Promise<Article | null> {
+  if (useMockArticles()) return mock.getArticleBySlug(slug) ?? null;
+
   const db = getDb();
-  if (!db) return mock.getArticleBySlug(slug) ?? null;
+  if (!db) return null;
 
   const [row] = await db.select().from(posts).where(eq(posts.slug, slug)).limit(1);
-  if (!row || row.status !== "published") {
-    return mock.getArticleBySlug(slug) ?? null;
-  }
+  if (!row || row.status !== "published") return null;
   return rowToArticle(row);
 }
 
 export async function getArticlesByCategory(category: CategorySlug): Promise<Article[]> {
+  if (useMockArticles()) return mock.getArticlesByCategory(category);
+
   const db = getDb();
-  if (!db) return mock.getArticlesByCategory(category);
+  if (!db) return [];
 
   const rows = await db
     .select()
@@ -107,20 +113,20 @@ export async function getArticlesByCategory(category: CategorySlug): Promise<Art
     .where(and(eq(posts.status, "published"), eq(posts.category, category)))
     .orderBy(desc(posts.publishedAt));
 
-  if (rows.length === 0) return mock.getArticlesByCategory(category);
   return rows.map(rowToArticle);
 }
 
 export async function getAllPublishedSlugs(): Promise<string[]> {
+  if (useMockArticles()) return mock.getAllSlugs();
+
   const db = getDb();
-  if (!db) return mock.getAllSlugs();
+  if (!db) return [];
 
   const rows = await db
     .select({ slug: posts.slug })
     .from(posts)
     .where(eq(posts.status, "published"));
 
-  if (rows.length === 0) return mock.getAllSlugs();
   return rows.map((r) => r.slug);
 }
 

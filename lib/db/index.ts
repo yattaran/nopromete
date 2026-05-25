@@ -4,8 +4,24 @@ import * as schema from "./schema";
 
 let _db: ReturnType<typeof drizzle<typeof schema>> | null = null;
 
+export function isValidDatabaseUrl(url: string | undefined): boolean {
+  if (!url?.trim()) return false;
+
+  try {
+    const parsed = new URL(url.trim());
+    return parsed.protocol === "postgresql:" || parsed.protocol === "postgres:";
+  } catch {
+    return false;
+  }
+}
+
+export function getDatabaseUrl(): string | null {
+  const url = process.env.DATABASE_URL?.trim();
+  return isValidDatabaseUrl(url) ? url! : null;
+}
+
 export function getDb() {
-  const url = process.env.DATABASE_URL;
+  const url = getDatabaseUrl();
   if (!url) return null;
 
   if (!_db) {
@@ -19,7 +35,9 @@ export function getDb() {
 export function requireDb() {
   const db = getDb();
   if (!db) {
-    throw new Error("DATABASE_URL is not configured");
+    throw new Error(
+      "DATABASE_URL is missing or invalid. Use a postgresql:// connection string from Neon.",
+    );
   }
   return db;
 }

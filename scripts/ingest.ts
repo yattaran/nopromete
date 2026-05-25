@@ -1,5 +1,5 @@
 import { loadLocalEnv } from "../lib/env/load-local";
-import { requireDb } from "../lib/db";
+import { getDatabaseUrl, requireDb } from "../lib/db";
 import { sources } from "../lib/db/schema";
 import { runIngest } from "../lib/ingest/pipeline";
 
@@ -14,8 +14,10 @@ function parseMaxArticles(): number {
 async function main() {
   loadLocalEnv();
 
-  if (!process.env.DATABASE_URL) {
-    console.error("Falta DATABASE_URL en .env.local");
+  if (!getDatabaseUrl()) {
+    console.error(
+      "Falta DATABASE_URL válida en .env.local (debe empezar con postgresql://)",
+    );
     process.exit(1);
   }
 
