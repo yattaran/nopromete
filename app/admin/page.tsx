@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { logoutAction, runIngestAction } from "@/app/admin/actions";
+import { isMissingColumnError } from "@/lib/db/errors";
 import { getPostsByStatus, hasDatabase } from "@/lib/data/posts";
 import { PostStatusBadge } from "@/components/admin/PostStatusBadge";
 
@@ -11,8 +12,22 @@ export const metadata: Metadata = {
 
 export default async function AdminPage() {
   const dbReady = hasDatabase();
-  const pending = dbReady ? await getPostsByStatus("pending_review") : [];
-  const approved = dbReady ? await getPostsByStatus("approved") : [];
+  let schemaOutOfDate = false;
+  let pending: Awaited<ReturnType<typeof getPostsByStatus>> = [];
+  let approved: Awaited<ReturnType<typeof getPostsByStatus>> = [];
+
+  if (dbReady) {
+    try {
+      pending = await getPostsByStatus("pending_review");
+      approved = await getPostsByStatus("approved");
+    } catch (err) {
+      if (isMissingColumnError(err, "is_positive_news")) {
+        schemaOutOfDate = true;
+      } else {
+        throw err;
+      }
+    }
+  }
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-10">
@@ -39,6 +54,15 @@ export default async function AdminPage() {
           <code className="font-mono">.env.local</code> y ejecutá{" "}
           <code className="font-mono">npm run db:push</code> y{" "}
           <code className="font-mono">npm run db:seed</code>.
+        </p>
+      )}
+
+      {schemaOutOfDate && (
+        <p className="mb-8 border border-accent/40 bg-tan/40 p-4 text-sm text-ink">
+          Falta la columna <code className="font-mono">is_positive_news</code> en Neon.
+          Ejecutá <code className="font-mono">npm run db:push</code> o corré el SQL en{" "}
+          <code className="font-mono">drizzle/manual/add-is-positive-news.sql</code> desde el
+          SQL Editor de Neon, y recargá esta página.
         </p>
       )}
 

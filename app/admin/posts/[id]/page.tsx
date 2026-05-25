@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { PostReviewActions } from "@/components/admin/PostReviewActions";
 import { PostStatusBadge } from "@/components/admin/PostStatusBadge";
 import { getPostWithRaw } from "@/lib/data/posts";
+import { commentarySectionTitle } from "@/lib/editorial/labels";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -73,7 +74,7 @@ export default async function AdminPostPage({ params }: PageProps) {
             </div>
             <div>
               <h3 className="text-xs font-semibold tracking-wide text-muted uppercase">
-                La parte no promete
+                {commentarySectionTitle(post.isPositiveNews)}
               </h3>
               <p className="mt-2 text-sm leading-relaxed">{post.commentary}</p>
               <blockquote className="mt-3 border-l-2 border-accent pl-3 font-serif italic">

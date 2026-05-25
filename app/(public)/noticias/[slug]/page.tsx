@@ -64,6 +64,7 @@ export default async function ArticlePage({ params }: PageProps) {
           factualSummary={article.factualSummary}
           whyItMatters={article.whyItMatters}
           commentary={article.commentary}
+          isPositiveNews={article.isPositiveNews}
         />
         <SourceAttribution
           sourceName={article.sourceName}

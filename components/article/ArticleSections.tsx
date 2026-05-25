@@ -1,13 +1,17 @@
+import { commentarySectionTitle } from "@/lib/editorial/labels";
+
 interface ArticleSectionsProps {
   factualSummary: string;
   whyItMatters: string;
   commentary: string;
+  isPositiveNews?: boolean;
 }
 
 export function ArticleSections({
   factualSummary,
   whyItMatters,
   commentary,
+  isPositiveNews = false,
 }: ArticleSectionsProps) {
   return (
     <div className="space-y-10">
@@ -22,7 +26,9 @@ export function ArticleSections({
       </section>
 
       <section>
-        <h2 className="mb-4 font-serif text-2xl font-bold text-ink">La parte no promete</h2>
+        <h2 className="mb-4 font-serif text-2xl font-bold text-ink">
+          {commentarySectionTitle(isPositiveNews)}
+        </h2>
         <div className="space-y-4 leading-relaxed text-ink/90">
           {commentary.split("\n\n").map((paragraph) => (
             <p key={paragraph.slice(0, 40)}>{paragraph}</p>

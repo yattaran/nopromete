@@ -27,6 +27,7 @@ function rowToArticle(row: Post): Article {
     factualSummary: row.factualSummary,
     whyItMatters: row.whyItMatters || row.summary,
     commentary: row.commentary,
+    isPositiveNews: row.isPositiveNews,
     donZopiQuote: row.donZopiQuote,
     sourceUrl: row.sourceUrl,
     sourceName: row.sourceName,

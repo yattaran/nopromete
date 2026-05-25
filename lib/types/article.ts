@@ -21,6 +21,7 @@ export interface Article {
   factualSummary: string;
   whyItMatters: string;
   commentary: string;
+  isPositiveNews?: boolean;
   donZopiQuote: string;
   sourceUrl: string;
   sourceName: string;

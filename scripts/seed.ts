@@ -85,6 +85,7 @@ async function seed() {
       factualSummary: article.factualSummary,
       whyItMatters: article.whyItMatters,
       commentary: article.commentary,
+      isPositiveNews: article.isPositiveNews ?? false,
       donZopiQuote: article.donZopiQuote,
       sourceUrl: article.sourceUrl,
       sourceName: article.sourceName,

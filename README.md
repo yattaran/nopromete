@@ -1,13 +1,13 @@
 # No Promete
 
-Sitio satírico de noticias costarricenses. Consume RSS, genera borradores con OpenAI, y requiere aprobación humana antes de publicar. Siempre enlaza la fuente original.
+Sitio satírico de noticias costarricenses. Consume RSS, genera borradores con Gemini Flash, y requiere aprobación humana antes de publicar. Siempre enlaza la fuente original.
 
 ## Stack
 
 - Next.js 16 (App Router) + TypeScript
 - Tailwind CSS 4
 - **Neon** (Postgres) + Drizzle ORM
-- OpenAI `gpt-4o-mini` para borradores
+- Google Gemini Flash para borradores
 - Auth.js (credenciales) para `/admin`
 - Vercel Cron → ingesta RSS
 
@@ -43,7 +43,7 @@ Sin `DATABASE_URL`, el sitio usa datos mock en `lib/mock/`.
 ```mermaid
 flowchart LR
   RSS[RSS feeds] --> Extract[Readability]
-  Extract --> LLM[OpenAI gpt-4o-mini]
+  Extract --> LLM[Gemini Flash]
   LLM --> Draft[Post pending_review]
   Draft --> Admin[Admin panel]
   Admin -->|approve + publish| Published[Published]
@@ -80,13 +80,14 @@ flowchart LR
 | `npm run db:push` | Aplicar schema a Neon |
 | `npm run db:seed` | Fuentes RSS + artículos mock publicados |
 | `npm run db:studio` | Drizzle Studio |
+| `npm run ingest -- --max=1` | Ingesta RSS local → Neon (requiere `GEMINI_API_KEY`) |
 
 ## Variables de entorno
 
 ```
 DATABASE_URL=          # Neon pooled connection string
-OPENAI_API_KEY=
-OPENAI_MODEL=gpt-4o-mini
+GEMINI_API_KEY=
+GEMINI_MODEL=gemini-2.5-flash
 CRON_SECRET=
 AUTH_SECRET=
 NEXTAUTH_URL=

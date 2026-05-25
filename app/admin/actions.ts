@@ -75,6 +75,7 @@ export async function regeneratePost(formData: FormData) {
       factualSummary: draft.factual_summary,
       whyItMatters: draft.why_it_matters,
       commentary: draft.commentary,
+      isPositiveNews: draft.is_positive_news,
       donZopiQuote: draft.don_zopi_quote,
       category,
       heroImage: raw.imageUrl ?? heroImageForCategory(category),

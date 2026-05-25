@@ -39,6 +39,7 @@ export const articles: Article[] = [
       "Las inundaciones en la capital afectan el comercio, el tránsito y la vida diaria de cientos de miles de personas. El retraso en obras de drenaje significa que el problema se repite temporada tras temporada.",
     commentary:
       "Tercera vez este mes. A este paso vendemos kayaks en la Sabana y nadie se sorprende.",
+    isPositiveNews: false,
     donZopiQuote:
       "El drenaje es como el gym: todos saben que hay que ir, pero nadie va.",
     sourceUrl: "https://www.crhoy.com/ejemplo/inundaciones",
@@ -79,9 +80,10 @@ export const articles: Article[] = [
     whyItMatters:
       "La demanda refleja un apetito público por espacios donde se cuestione el poder con humor, algo cada vez más escaso en el debate político local.",
     commentary:
-      "Cuando la sátira llena teatros y la política llena memes, algo estamos haciendo bien. O mal. Probablemente ambos.",
+      "Cuando la sátira llena el Teatro Nacional en horas, el país todavía tiene sentido del humor y ganas de reírse con inteligencia.",
+    isPositiveNews: true,
     donZopiQuote:
-      "El arte es el único lugar donde la verdad no necesita permiso de la Asamblea.",
+      "Hay esperanza: la fila era para cultura, no para un trámite.",
     sourceUrl: "https://www.nacion.com/ejemplo/teatro",
     sourceName: "La Nación",
     heroImage: "/mock/hero-theater.svg",

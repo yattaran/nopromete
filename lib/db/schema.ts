@@ -52,6 +52,7 @@ export const posts = pgTable("posts", {
   factualSummary: text("factual_summary").notNull(),
   whyItMatters: text("why_it_matters").notNull().default(""),
   commentary: text("commentary").notNull(),
+  isPositiveNews: boolean("is_positive_news").notNull().default(false),
   donZopiQuote: text("don_zopi_quote").notNull(),
   sourceUrl: text("source_url").notNull(),
   sourceName: text("source_name").notNull(),

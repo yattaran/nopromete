@@ -20,8 +20,8 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "DATABASE_URL not configured" }, { status: 500 });
   }
 
-  if (!process.env.OPENAI_API_KEY) {
-    return NextResponse.json({ error: "OPENAI_API_KEY not configured" }, { status: 500 });
+  if (!process.env.GEMINI_API_KEY) {
+    return NextResponse.json({ error: "GEMINI_API_KEY not configured" }, { status: 500 });
   }
 
   try {

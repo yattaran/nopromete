@@ -58,6 +58,7 @@ async function main() {
 
   if (!extractOne) {
     console.log("\nTip: agregá --extract para probar Readability en el primer artículo de cada feed.");
+    console.log("Tip: npm run ingest -- --max=1 para ingerir y guardar borradores en Neon.");
   }
 }
 

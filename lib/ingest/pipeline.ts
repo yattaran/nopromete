@@ -87,6 +87,7 @@ export async function runIngest(options?: { maxArticles?: number }): Promise<Ing
       factualSummary: draft.factual_summary,
       whyItMatters: draft.why_it_matters,
       commentary: draft.commentary,
+          isPositiveNews: draft.is_positive_news,
           donZopiQuote: draft.don_zopi_quote,
           sourceUrl: item.link,
           sourceName: source.name,
