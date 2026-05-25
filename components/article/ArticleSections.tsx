@@ -1,17 +1,18 @@
-import { commentarySectionTitle } from "@/lib/editorial/labels";
+import { DonZopiQuoteSection } from "@/components/article/DonZopiQuoteSection";
+import type { SmokeLevel } from "@/lib/editorial/smoke-level";
 
 interface ArticleSectionsProps {
   factualSummary: string;
   whyItMatters: string;
-  commentary: string;
-  isPositiveNews?: boolean;
+  donZopiQuote: string;
+  smokeLevel: SmokeLevel;
 }
 
 export function ArticleSections({
   factualSummary,
   whyItMatters,
-  commentary,
-  isPositiveNews = false,
+  donZopiQuote,
+  smokeLevel,
 }: ArticleSectionsProps) {
   return (
     <div className="space-y-10">
@@ -25,16 +26,7 @@ export function ArticleSections({
         <p className="leading-relaxed text-ink/90">{whyItMatters}</p>
       </section>
 
-      <section>
-        <h2 className="mb-4 font-serif text-2xl font-bold text-ink">
-          {commentarySectionTitle(isPositiveNews)}
-        </h2>
-        <div className="space-y-4 leading-relaxed text-ink/90">
-          {commentary.split("\n\n").map((paragraph) => (
-            <p key={paragraph.slice(0, 40)}>{paragraph}</p>
-          ))}
-        </div>
-      </section>
+      <DonZopiQuoteSection quote={donZopiQuote} smokeLevel={smokeLevel} />
     </div>
   );
 }

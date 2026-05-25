@@ -1,3 +1,5 @@
+import type { SmokeLevel } from "@/lib/editorial/smoke-level";
+
 export type CategorySlug =
   | "noticias"
   | "politica"
@@ -20,9 +22,10 @@ export interface Article {
   summary: string;
   factualSummary: string;
   whyItMatters: string;
-  commentary: string;
   isPositiveNews?: boolean;
   donZopiQuote: string;
+  donZopiVerdict: string;
+  smokeLevel: SmokeLevel;
   sourceUrl: string;
   sourceName: string;
   heroImage: string;

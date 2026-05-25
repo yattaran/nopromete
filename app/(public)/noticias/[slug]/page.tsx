@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ArticleDisclaimer } from "@/components/article/ArticleDisclaimer";
+import { ArticleEditorialBadges } from "@/components/article/ArticleEditorialBadges";
 import { ArticlePageMeta } from "@/components/article/ArticlePageMeta";
 import { ArticleSections } from "@/components/article/ArticleSections";
 import { ArticleShareButtons } from "@/components/article/ArticleShareButtons";
@@ -53,18 +54,17 @@ export default async function ArticlePage({ params }: PageProps) {
         {article.headline}
       </h1>
 
-      <p className="mt-4 font-serif text-lg italic text-ink/70">
-        <span className="font-bold text-ink">No promete</span>
-        <br />
-        pero es la realidad
-      </p>
+      <ArticleEditorialBadges
+        donZopiVerdict={article.donZopiVerdict}
+        smokeLevel={article.smokeLevel}
+      />
 
       <div className="mt-10 space-y-10">
         <ArticleSections
           factualSummary={article.factualSummary}
           whyItMatters={article.whyItMatters}
-          commentary={article.commentary}
-          isPositiveNews={article.isPositiveNews}
+          donZopiQuote={article.donZopiQuote}
+          smokeLevel={article.smokeLevel}
         />
         <SourceAttribution
           sourceName={article.sourceName}

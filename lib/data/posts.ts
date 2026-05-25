@@ -3,9 +3,10 @@ import { getDb, getDatabaseUrl, requireDb } from "@/lib/db";
 import { posts, rawArticles } from "@/lib/db/schema";
 import type { Post, PostStatus } from "@/lib/db/schema";
 import * as mock from "@/lib/mock/articles";
+import { defaultSmokeLevel, isSmokeLevel } from "@/lib/editorial/smoke-level";
 import type { Article, CategorySlug } from "@/lib/types/article";
 
-function useMockArticles(): boolean {
+function shouldUseMockArticles(): boolean {
   return !getDatabaseUrl();
 }
 
@@ -30,9 +31,10 @@ function rowToArticle(row: Post): Article {
     summary: row.summary,
     factualSummary: row.factualSummary,
     whyItMatters: row.whyItMatters || row.summary,
-    commentary: row.commentary,
     isPositiveNews: row.isPositiveNews,
     donZopiQuote: row.donZopiQuote,
+    donZopiVerdict: row.donZopiVerdict,
+    smokeLevel: isSmokeLevel(row.smokeLevel) ? row.smokeLevel : defaultSmokeLevel,
     sourceUrl: row.sourceUrl,
     sourceName: row.sourceName,
     heroImage: row.heroImage,
@@ -46,7 +48,7 @@ export function hasDatabase(): boolean {
 }
 
 export async function getFeaturedArticle(): Promise<Article | null> {
-  if (useMockArticles()) return mock.getFeaturedArticle();
+  if (shouldUseMockArticles()) return mock.getFeaturedArticle();
 
   const db = getDb();
   if (!db) return null;
@@ -62,7 +64,7 @@ export async function getFeaturedArticle(): Promise<Article | null> {
 }
 
 export async function getGridArticles(): Promise<Article[]> {
-  if (useMockArticles()) return mock.getGridArticles();
+  if (shouldUseMockArticles()) return mock.getGridArticles();
 
   const db = getDb();
   if (!db) return [];
@@ -86,12 +88,12 @@ export async function getGridArticles(): Promise<Article[]> {
 export async function getFeaturedDonZopiQuote(): Promise<string> {
   const featured = await getFeaturedArticle();
   if (featured) return featured.donZopiQuote;
-  if (useMockArticles()) return mock.getFeaturedDonZopiQuote();
+  if (shouldUseMockArticles()) return mock.getFeaturedDonZopiQuote();
   return "Todavía no hay noticias publicadas. Don Zopi está en la torre esperando el primer cable.";
 }
 
 export async function getArticleBySlug(slug: string): Promise<Article | null> {
-  if (useMockArticles()) return mock.getArticleBySlug(slug) ?? null;
+  if (shouldUseMockArticles()) return mock.getArticleBySlug(slug) ?? null;
 
   const db = getDb();
   if (!db) return null;
@@ -102,7 +104,7 @@ export async function getArticleBySlug(slug: string): Promise<Article | null> {
 }
 
 export async function getArticlesByCategory(category: CategorySlug): Promise<Article[]> {
-  if (useMockArticles()) return mock.getArticlesByCategory(category);
+  if (shouldUseMockArticles()) return mock.getArticlesByCategory(category);
 
   const db = getDb();
   if (!db) return [];
@@ -117,7 +119,7 @@ export async function getArticlesByCategory(category: CategorySlug): Promise<Art
 }
 
 export async function getAllPublishedSlugs(): Promise<string[]> {
-  if (useMockArticles()) return mock.getAllSlugs();
+  if (shouldUseMockArticles()) return mock.getAllSlugs();
 
   const db = getDb();
   if (!db) return [];

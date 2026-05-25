@@ -16,10 +16,10 @@ export const articles: Article[] = [
       "El gobierno anunció un megaproyecto de infraestructura valorado en ₡450.000 millones que incluye un puente y ampliación vial. Organizaciones ambientalistas cuestionan la ausencia de estudios de impacto y el proceso de contratación directa.",
     whyItMatters:
       "Proyectos de esta magnitud definen cómo se mueve el país durante años. Sin estudios ni licitación, el costo y el impacto ambiental recaen en todos los contribuyentes.",
-    commentary:
-      "Claro, porque cuando el presupuesto es grande, los estudios son opcionales y la licitación es de adorno. Promesa en construcción, entrega algún día.",
     donZopiQuote:
       "No es que el país esté mal, es que lo manejan como si fuera finca familiar.",
+    donZopiVerdict: "Huele raro.",
+    smokeLevel: "conferencia_eterna",
     sourceUrl: "https://www.nacion.com/ejemplo/megaproyecto",
     sourceName: "La Nación",
     heroImage: "/mock/hero-bridge.svg",
@@ -37,11 +37,11 @@ export const articles: Article[] = [
       "Fuertes lluvias causaron inundaciones en varias avenidas de San José. Autoridades reportaron cierres temporales y daños en comercios. El MOPT indicó que hay proyectos de drenaje en planificación.",
     whyItMatters:
       "Las inundaciones en la capital afectan el comercio, el tránsito y la vida diaria de cientos de miles de personas. El retraso en obras de drenaje significa que el problema se repite temporada tras temporada.",
-    commentary:
-      "Tercera vez este mes. A este paso vendemos kayaks en la Sabana y nadie se sorprende.",
     isPositiveNews: false,
     donZopiQuote:
       "El drenaje es como el gym: todos saben que hay que ir, pero nadie va.",
+    donZopiVerdict: "Costa Rica siendo Costa Rica.",
+    smokeLevel: "estresando",
     sourceUrl: "https://www.crhoy.com/ejemplo/inundaciones",
     sourceName: "CRHoy",
     heroImage: "/mock/hero-flood.svg",
@@ -58,10 +58,10 @@ export const articles: Article[] = [
       "Varios países celebran procesos electorales esta semana. Encuestas muestran resultados reñidos y alta participación en debates televisados.",
     whyItMatters:
       "Lo que pasa en otras democracias afecta comercio, migración y política exterior que impactan directamente a Costa Rica.",
-    commentary:
-      "Democracia en vivo: todos gritan, nadie escucha, y al final ganan los que mejor editan el clip de 15 segundos.",
     donZopiQuote:
       "La política internacional es como WhatsApp familiar: mucho drama, poca solución.",
+    donZopiVerdict: "Diay… sobrevivible.",
+    smokeLevel: "sospechoso",
     sourceUrl: "https://www.bbc.com/ejemplo/elecciones",
     sourceName: "BBC Mundo",
     heroImage: "/mock/hero-ballot.svg",
@@ -79,11 +79,11 @@ export const articles: Article[] = [
       "El Teatro Nacional anunció una temporada dedicada a obras de sátira política. Las entradas para la función inaugural se agotaron en menos de cuatro horas.",
     whyItMatters:
       "La demanda refleja un apetito público por espacios donde se cuestione el poder con humor, algo cada vez más escaso en el debate político local.",
-    commentary:
-      "Cuando la sátira llena el Teatro Nacional en horas, el país todavía tiene sentido del humor y ganas de reírse con inteligencia.",
     isPositiveNews: true,
     donZopiQuote:
       "Hay esperanza: la fila era para cultura, no para un trámite.",
+    donZopiVerdict: "Esto sí da respirito.",
+    smokeLevel: "relax",
     sourceUrl: "https://www.nacion.com/ejemplo/teatro",
     sourceName: "La Nación",
     heroImage: "/mock/hero-theater.svg",
@@ -100,10 +100,10 @@ export const articles: Article[] = [
       "Un diputado presentó un proyecto de ley que busca limitar la cantidad de iniciativas legislativas por período. Colegas de distintos bloques expresaron opiniones divididas.",
     whyItMatters:
       "La Asamblea Legislativa aprueba pocas leyes pero presenta miles de proyectos. Cualquier reforma al ritmo legislativo afecta cómo se gobierna el país.",
-    commentary:
-      "Una ley sobre leyes. Meta nivel legislatura. Próximo paso: comisión para estudiar comisiones.",
     donZopiQuote:
       "En la Asamblea la productividad se mide en proyectos presentados, no en proyectos aprobados.",
+    donZopiVerdict: "No promete.",
+    smokeLevel: "cinematic",
     sourceUrl: "https://www.diarioextra.com/ejemplo/ley-leyes",
     sourceName: "Diario Extra",
     heroImage: "/mock/hero-asamblea.svg",
@@ -120,10 +120,10 @@ export const articles: Article[] = [
       "El precio del cartón de huevos alcanzó un nuevo máximo histórico según datos del MEIC. Analistas señalan factores de costos de producción y cadena de suministro.",
     whyItMatters:
       "El huevo es pilar de la canasta básica tica. Cuando sube de precio, el impacto se siente en la mesa de las familias de menores ingresos.",
-    commentary:
-      "Cuando el desayuno tico cuesta como cena en San Pedro, algo huele mal. Y no es el gallo pinto.",
     donZopiQuote:
       "La canasta básica ya no es básica; es aspiracional.",
+    donZopiVerdict: "Ya me cansé un poquito.",
+    smokeLevel: "estresando",
     sourceUrl: "https://www.elfinancierocr.com/ejemplo/huevos",
     sourceName: "El Financiero",
     heroImage: "/mock/hero-eggs.svg",
@@ -140,10 +140,10 @@ export const articles: Article[] = [
       "Decenas de personas reportaron ver un objeto luminoso sobre Cartago. Astrónomos locales indicaron que probablemente se trataba de un globo con luces LED arrastrado por viento.",
     whyItMatters:
       "La desinformación en redes se propaga más rápido que la verificación. Casos así muestran lo fácil que es confundir un fenómeno común con algo extraordinario.",
-    commentary:
-      "De contacto extraterrestre a fiesta de quince años en 48 horas. Costa Rica no decepciona.",
     donZopiQuote:
       "Antes de invocar aliens, siempre revise si hay piñata cerca.",
+    donZopiVerdict: "Costa Rica siendo Costa Rica.",
+    smokeLevel: "cinematic",
     sourceUrl: "https://www.teletica.com/ejemplo/ovni",
     sourceName: "Teletica",
     heroImage: "/mock/hero-ufo.svg",
@@ -160,10 +160,10 @@ export const articles: Article[] = [
       "Columna de opinión sobre los tiempos de trámites gubernamentales en Costa Rica, citando datos de tiempos promedio de respuesta en instituciones públicas.",
     whyItMatters:
       "Los trámites lentos cuestan tiempo y dinero a ciudadanos y empresas. Mejorar la eficiencia del Estado es clave para la competitividad del país.",
-    commentary:
-      "No es burocracia, es entrenamiento olímpico para la paciencia. Medalla de oro en trámite 3 en 1.",
     donZopiQuote:
       "El trámite más rápido es el que otro hace por vos.",
+    donZopiVerdict: "Esto ocupa café.",
+    smokeLevel: "conferencia_eterna",
     sourceUrl: "https://www.nacion.com/ejemplo/burocracia",
     sourceName: "La Nación",
     heroImage: "/mock/hero-paperwork.svg",
@@ -180,10 +180,10 @@ export const articles: Article[] = [
       "Un informe internacional documenta aceleración de erosión costera en la región. Expertos recomiendan políticas de adaptación y protección de ecosistemas marino-costeros.",
     whyItMatters:
       "Costa Rica depende del turismo costero y la pesca. La erosión amenaza comunidades, infraestructura y la economía de zonas enteras del Pacífico y el Caribe.",
-    commentary:
-      "PowerPoint contra el océano. Spoiler: el océano va ganando.",
     donZopiQuote:
       "Planificar a futuro es gratis; ejecutar cuesta. Por eso solo hacemos lo primero.",
+    donZopiVerdict: "No promete.",
+    smokeLevel: "conferencia_eterna",
     sourceUrl: "https://www.reuters.com/ejemplo/erosion",
     sourceName: "Reuters",
     heroImage: "/mock/hero-coast.svg",
@@ -200,10 +200,10 @@ export const articles: Article[] = [
       "Un festival de música de gran convocatoria agotó entradas en minutos. Usuarios reportaron dificultades en la plataforma y presencia de revendedores en redes sociales.",
     whyItMatters:
       "El acceso equitativo a eventos culturales es un tema recurrente. Bots y reventa dejan afuera a quienes no pueden pagar precios inflados.",
-    commentary:
-      "Siete minutos. Ni el INA aprueba trámites tan rápido. Los bots sí tienen pase VIP.",
     donZopiQuote:
       "La cultura es de todos, excepto cuando hay que comprar entrada.",
+    donZopiVerdict: "Huele raro.",
+    smokeLevel: "sospechoso",
     sourceUrl: "https://www.lateja.cr/ejemplo/festival",
     sourceName: "La Teja",
     heroImage: "/mock/hero-festival.svg",

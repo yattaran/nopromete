@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { PostReviewActions } from "@/components/admin/PostReviewActions";
 import { PostStatusBadge } from "@/components/admin/PostStatusBadge";
 import { getPostWithRaw } from "@/lib/data/posts";
-import { commentarySectionTitle } from "@/lib/editorial/labels";
+import { defaultSmokeLevel, formatSmokeLevel, isSmokeLevel } from "@/lib/editorial/smoke-level";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -57,6 +57,16 @@ export default async function AdminPostPage({ params }: PageProps) {
         <section className="border border-ink/15 p-5">
           <h2 className="font-serif text-lg font-bold text-ink">Borrador No Promete</h2>
           <p className="mt-4 font-serif text-2xl font-bold text-ink">{post.headline}</p>
+          <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
+            <span className="border border-ink/20 bg-tan/60 px-2 py-0.5 font-serif font-bold text-ink">
+              {post.donZopiVerdict}
+            </span>
+            <span className="text-ink/70">
+              {formatSmokeLevel(
+                isSmokeLevel(post.smokeLevel) ? post.smokeLevel : defaultSmokeLevel,
+              )}
+            </span>
+          </div>
           <p className="mt-3 text-sm text-ink/80">{post.summary}</p>
 
           <div className="mt-6 space-y-4">
@@ -74,10 +84,9 @@ export default async function AdminPostPage({ params }: PageProps) {
             </div>
             <div>
               <h3 className="text-xs font-semibold tracking-wide text-muted uppercase">
-                {commentarySectionTitle(post.isPositiveNews)}
+                Don Zopi comenta
               </h3>
-              <p className="mt-2 text-sm leading-relaxed">{post.commentary}</p>
-              <blockquote className="mt-3 border-l-2 border-accent pl-3 font-serif italic">
+              <blockquote className="mt-2 border-l-2 border-accent pl-3 font-serif text-sm italic leading-relaxed">
                 &ldquo;{post.donZopiQuote}&rdquo;
               </blockquote>
             </div>

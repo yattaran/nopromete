@@ -6,9 +6,8 @@ export default function EticaPage() {
         <p>
           En <strong>No Promete</strong> distinguimos siempre hechos de opinión. Los
           resúmenes factuales se basan en fuentes verificables. El comentario de Don
-          Zopi puede ser satírico, crítico o celebratorio según la noticia: en historias
-          positivas usamos la sección &ldquo;La parte que promete&rdquo;; en el resto,
-          &ldquo;La parte que no promete&rdquo;.
+          Zopi puede ser satírico, crítico o celebratorio según la noticia, siempre en la
+          sección &ldquo;Don Zopi comenta&rdquo;.
         </p>
         <h2 className="font-serif text-xl font-bold text-ink">Principios</h2>
         <ul className="list-inside list-disc space-y-2">

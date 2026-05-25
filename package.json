@@ -13,7 +13,8 @@
     "db:seed": "tsx scripts/seed.ts",
     "test:rss": "tsx scripts/test-rss.ts",
     "test:rss:extract": "tsx scripts/test-rss.ts --extract",
-    "ingest": "tsx scripts/ingest.ts"
+    "ingest": "tsx scripts/ingest.ts",
+    "re-evaluate": "tsx scripts/re-evaluate-don-zopi.ts"
   },
   "dependencies": {
     "@mozilla/readability": "^0.6.0",
