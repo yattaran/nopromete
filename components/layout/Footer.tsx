@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import { brand } from "@/lib/brand";
 
@@ -7,7 +6,6 @@ const footerLinks = [
   { href: "/etica", label: "Código de ética" },
   { href: "/aviso-legal", label: "Aviso legal" },
   { href: "#", label: "Contacto" },
-  { href: "#", label: "Trabajá con nosotros" },
 ];
 
 export function Footer() {
@@ -35,16 +33,7 @@ export function Footer() {
               </span>
             ))}
           </nav>
-          <p className="flex items-center gap-2 text-sm font-medium text-ink">
-            {brand.footerTagline}
-            <Image
-              src={brand.feather}
-              alt=""
-              width={16}
-              height={16}
-              aria-hidden
-            />
-          </p>
+          <p className="text-sm font-medium text-ink">{brand.footerTagline}</p>
         </div>
       </div>
     </footer>

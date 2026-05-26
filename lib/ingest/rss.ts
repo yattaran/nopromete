@@ -3,6 +3,7 @@ import Parser from "rss-parser";
 export interface FeedItem {
   title: string;
   link: string;
+  description?: string | null;
   pubDate?: string;
 }
 
@@ -20,6 +21,11 @@ export async function fetchFeedItems(feedUrl: string): Promise<FeedItem[]> {
     .map((item) => ({
       title: item.title?.trim() ?? "Sin título",
       link: item.link?.trim() ?? item.guid?.trim() ?? "",
+      description:
+        (typeof (item as any).contentSnippet === "string" ? (item as any).contentSnippet : null) ??
+        (typeof (item as any).content === "string" ? (item as any).content : null) ??
+        (typeof (item as any).summary === "string" ? (item as any).summary : null) ??
+        null,
       pubDate: item.pubDate ?? item.isoDate,
     }))
     .filter((item) => item.link.startsWith("http"));

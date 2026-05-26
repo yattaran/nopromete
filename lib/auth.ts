@@ -1,7 +1,10 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
+import { getAdminPassword } from "@/lib/admin-password";
+import { getAuthSecret } from "@/lib/auth-secret";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  secret: getAuthSecret(),
   trustHost: true,
   providers: [
     Credentials({
@@ -9,10 +12,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         password: { label: "Contraseña", type: "password" },
       },
       authorize(credentials) {
-        const password = credentials?.password as string | undefined;
-        const adminPassword = process.env.ADMIN_PASSWORD;
+        const password = credentials?.password;
+        const adminPassword = getAdminPassword();
 
-        if (!password || !adminPassword || password !== adminPassword) {
+        if (typeof password !== "string" || !adminPassword || password !== adminPassword) {
           return null;
         }
 

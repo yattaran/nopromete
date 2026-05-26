@@ -25,7 +25,8 @@ Debe sentirse: conversacional, observador, humano, claramente costarricense.
 **Evitar:** sensacionalismo, ragebait, LinkedIn positivity, tono corporativo, activismo terminally online.
 
 Para **titulares** → skill `nopromete-headlines`.  
-Para **captions y redes** → skill `nopromete-social`.
+Para **captions y redes** → skill `nopromete-social`.  
+Para **pipeline RSS → Instagram** → skill `nopromete-social-pipeline`.
 
 ---
 

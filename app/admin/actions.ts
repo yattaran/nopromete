@@ -1,16 +1,22 @@
 "use server";
 
-import { eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { auth, signOut } from "@/lib/auth";
-import { updatePostStatus } from "@/lib/data/posts";
-import { requireDb } from "@/lib/db";
-import { posts, rawArticles } from "@/lib/db/schema";
-import { generatePostDraft } from "@/lib/llm/generate";
-import type { PostStatus } from "@/lib/db/schema";
-import type { CategorySlug } from "@/lib/types/article";
-import { heroImageForCategory } from "@/lib/utils/hero-image";
+import { getDatabaseUrl, requireDb } from "@/lib/db";
+import { newsItems, socialDrafts } from "@/lib/db/schema";
+import { runSocialIngest } from "@/lib/ingest/social-pipeline";
+import { fetchAndExtractArticle } from "@/lib/ingest/extract";
+import { isSmokeLevel, resolveSmokeLevel } from "@/lib/editorial/smoke-level";
+import { generateSocialDraft } from "@/lib/llm/social-generate";
+import { signAssetToken } from "@/lib/social/assets";
+import { ASSET_TEMPLATE_VERSION } from "@/lib/social/asset-brand";
+import {
+  isNonRetryablePublishError,
+  publishDueScheduledDrafts,
+  publishSocialDraftRecord,
+} from "@/lib/publish/social-draft-publish";
 
 async function requireAuth() {
   const session = await auth();
@@ -19,132 +25,304 @@ async function requireAuth() {
   }
 }
 
-function revalidatePublicPages(slug?: string) {
-  revalidatePath("/");
-  revalidatePath("/noticias");
-  if (slug) {
-    revalidatePath(`/noticias/${slug}`);
-  }
-}
-
-async function setStatus(id: string, status: PostStatus) {
-  await requireAuth();
-
-  const db = requireDb();
-  const [post] = await db
-    .select({ slug: posts.slug })
-    .from(posts)
-    .where(eq(posts.id, id))
-    .limit(1);
-
-  if (!post) {
-    throw new Error("Post not found");
-  }
-
-  await updatePostStatus(id, status);
-  revalidatePath("/admin");
-  revalidatePath(`/admin/posts/${id}`);
-  revalidatePublicPages(post.slug);
-}
-
 export async function logoutAction() {
   await signOut({ redirectTo: "/admin/login" });
 }
 
-export async function approvePostById(postId: string) {
-  await setStatus(postId, "approved");
-}
-
-export async function publishPostById(postId: string) {
-  await setStatus(postId, "published");
-  redirect("/admin");
-}
-
-export async function rejectPostById(postId: string) {
-  await setStatus(postId, "rejected");
-  redirect("/admin");
-}
-
-/** @deprecated Use approvePostById — kept for any old forms */
-export async function approvePost(formData: FormData) {
-  const id = formData.get("id");
-  if (typeof id !== "string" || !id) throw new Error("Missing post id");
-  await approvePostById(id);
-}
-
-export async function publishPost(formData: FormData) {
-  const id = formData.get("id");
-  if (typeof id !== "string" || !id) throw new Error("Missing post id");
-  await publishPostById(id);
-}
-
-export async function rejectPost(formData: FormData) {
-  const id = formData.get("id");
-  if (typeof id !== "string" || !id) throw new Error("Missing post id");
-  await rejectPostById(id);
-}
-
-export async function regeneratePost(formData: FormData) {
-  const id = formData.get("id");
-  if (typeof id !== "string" || !id) throw new Error("Missing post id");
-
+export async function runSocialIngestAction(options?: { maxItems?: number }) {
   await requireAuth();
+
+  if (!getDatabaseUrl()) {
+    throw new Error("DATABASE_URL missing or invalid (expected postgresql://...)");
+  }
+
+  const result = await runSocialIngest({ maxItems: options?.maxItems ?? 25 });
+  revalidatePath("/admin");
+  return result;
+}
+
+export async function generateSocialDraftsAction(options?: { maxDrafts?: number }) {
+  await requireAuth();
+  const maxDrafts = options?.maxDrafts ?? 1;
+
   const db = requireDb();
 
-  const [post] = await db.select().from(posts).where(eq(posts.id, id)).limit(1);
-  if (!post) throw new Error("Post not found");
-
-  const [raw] = await db
+  const candidates = await db
     .select()
-    .from(rawArticles)
-    .where(eq(rawArticles.id, post.rawArticleId))
-    .limit(1);
+    .from(newsItems)
+    .leftJoin(socialDrafts, eq(socialDrafts.newsItemId, newsItems.id))
+    .where(isNull(socialDrafts.id))
+    .limit(maxDrafts);
 
-  if (!raw) throw new Error("Raw article not found");
+  let created = 0;
+  const errors: string[] = [];
 
-  const draft = await generatePostDraft(raw.title, raw.extractedContent, post.sourceName);
-  const category = draft.category as CategorySlug;
+  for (const row of candidates) {
+    const item = row.news_items;
+    try {
+      const extracted = await fetchAndExtractArticle(item.sourceUrl);
+      const { output, promptVersion } = await generateSocialDraft({
+        sourceName: item.sourceName,
+        sourceUrl: item.sourceUrl,
+        title: extracted.title ?? item.title,
+        extractedText: [
+          extracted.content,
+          item.description ? `\n\nResumen RSS:\n${item.description}` : "",
+        ].join(""),
+      });
 
-  await db
-    .update(posts)
-    .set({
-      headline: draft.headline,
-      summary: draft.summary,
-      factualSummary: draft.factual_summary,
-      whyItMatters: draft.why_it_matters,
-      commentary: draft.don_zopi_quote,
-      isPositiveNews: draft.is_positive_news,
-      donZopiQuote: draft.don_zopi_quote,
-      donZopiVerdict: draft.don_zopi_verdict,
-      smokeLevel: draft.smoke_level,
-      category,
-      heroImage: raw.imageUrl ?? heroImageForCategory(category),
-      riskFlags: draft.risk_flags,
-      status: "pending_review",
-      updatedAt: new Date(),
-    })
-    .where(eq(posts.id, id));
+      await db.insert(socialDrafts).values({
+        newsItemId: item.id,
+        platform: "instagram",
+        format: output.recommended_format,
+        safetyClassification: output.safety_classification,
+        safetyReason: output.reason,
+        newsSummaryInternal: output.news_summary_internal,
+        editorialAngle: output.editorial_angle,
+        headline: output.story_headline,
+        subtext: output.story_subtext,
+        donZopiReaction: output.don_zopi_reaction ?? "",
+        smokeLevel: output.smoke_level,
+        caption: output.instagram_caption,
+        hashtags: output.hashtags ?? [],
+        sourceCredit: output.source_credit,
+        linkStickerUrl: output.link_sticker_url,
+        status: "needs_review",
+        llmPromptVersion: promptVersion,
+        updatedAt: new Date(),
+      });
 
-  revalidatePath("/admin");
-  revalidatePath(`/admin/posts/${id}`);
-}
+      await db
+        .update(newsItems)
+        .set({
+          extractedTitle: extracted.title,
+          extractedSummary: extracted.description ?? item.description ?? null,
+          articleImageUrl: extracted.imageUrl,
+          status: "ready_for_llm",
+        })
+        .where(eq(newsItems.id, item.id));
 
-export async function runIngestAction() {
-  await requireAuth();
+      created++;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "unknown error";
+      errors.push(`${item.sourceUrl}: ${message}`);
 
-  const cronSecret = process.env.CRON_SECRET;
-  if (!cronSecret) throw new Error("CRON_SECRET not configured");
-
-  const baseUrl = process.env.NEXTAUTH_URL ?? "http://localhost:3000";
-  const response = await fetch(`${baseUrl}/api/cron/ingest`, {
-    headers: { Authorization: `Bearer ${cronSecret}` },
-  });
-
-  const data = await response.json();
-  if (!response.ok) {
-    throw new Error(data.error ?? "Ingest failed");
+      if (
+        message.includes("429") ||
+        message.toLowerCase().includes("quota") ||
+        message.toLowerCase().includes("rate limit")
+      ) {
+        break;
+      }
+    }
   }
 
   revalidatePath("/admin");
-  return data;
+  return { created, errors };
+}
+
+export async function updateSocialDraftFieldsAction(draftId: string, formData: FormData) {
+  await requireAuth();
+  const db = requireDb();
+
+  const headline = formData.get("headline");
+  const subtext = formData.get("subtext");
+  const donZopiReaction = formData.get("donZopiReaction");
+  const smokeLevel = formData.get("smokeLevel");
+  const caption = formData.get("caption");
+
+  if (
+    typeof headline !== "string" ||
+    typeof subtext !== "string" ||
+    typeof donZopiReaction !== "string" ||
+    typeof smokeLevel !== "string" ||
+    typeof caption !== "string"
+  ) {
+    throw new Error("Invalid form data");
+  }
+
+  if (!isSmokeLevel(smokeLevel)) {
+    throw new Error("Invalid smoke level");
+  }
+
+  await db
+    .update(socialDrafts)
+    .set({
+      headline: headline.trim(),
+      subtext: subtext.trim(),
+      donZopiReaction: donZopiReaction.trim(),
+      smokeLevel,
+      caption: caption.trim(),
+      updatedAt: new Date(),
+      renderedAssetUrl: null,
+    })
+    .where(and(eq(socialDrafts.id, draftId), eq(socialDrafts.status, "needs_review")));
+
+  revalidatePath(`/admin/social/${draftId}`);
+}
+
+export async function approveSocialDraftById(draftId: string) {
+  await requireAuth();
+  const db = requireDb();
+  await db
+    .update(socialDrafts)
+    .set({
+      status: "approved",
+      approvedBy: "admin",
+      approvedAt: new Date(),
+      updatedAt: new Date(),
+    })
+    .where(and(eq(socialDrafts.id, draftId), eq(socialDrafts.status, "needs_review")));
+  revalidatePath("/admin");
+  revalidatePath(`/admin/social/${draftId}`);
+}
+
+export async function rejectSocialDraftById(draftId: string) {
+  await requireAuth();
+  const db = requireDb();
+  await db
+    .update(socialDrafts)
+    .set({
+      status: "rejected",
+      updatedAt: new Date(),
+    })
+    .where(eq(socialDrafts.id, draftId));
+  revalidatePath("/admin");
+  redirect("/admin");
+}
+
+export async function renderSocialAssetById(draftId: string) {
+  await requireAuth();
+  const db = requireDb();
+
+  const [draftRow] = await db
+    .select({ smokeLevel: socialDrafts.smokeLevel })
+    .from(socialDrafts)
+    .where(eq(socialDrafts.id, draftId))
+    .limit(1);
+  if (!draftRow) throw new Error("Draft not found");
+
+  const baseUrl = process.env.NEXTAUTH_URL ?? "http://localhost:3000";
+  const exp = Date.now() + 1000 * 60 * 60 * 24 * 30;
+  const token = signAssetToken({ draftId, exp });
+  const smoke = resolveSmokeLevel(draftRow.smokeLevel);
+  const renderedAssetUrl = `${baseUrl}/api/assets/social/${draftId}?token=${token}&smoke=${smoke}`;
+
+  await db
+    .update(socialDrafts)
+    .set({
+      renderedAssetUrl,
+      assetTemplateVersion: ASSET_TEMPLATE_VERSION,
+      updatedAt: new Date(),
+    })
+    .where(eq(socialDrafts.id, draftId));
+
+  revalidatePath("/admin");
+  revalidatePath(`/admin/social/${draftId}`);
+  return { renderedAssetUrl };
+}
+
+export async function publishSocialDraftToInstagramById(draftId: string) {
+  await requireAuth();
+  const db = requireDb();
+
+  const [draft] = await db.select().from(socialDrafts).where(eq(socialDrafts.id, draftId)).limit(1);
+  if (!draft) throw new Error("Draft not found");
+  if (draft.status !== "approved" && draft.status !== "failed") {
+    throw new Error("Draft must be approved (or failed for retry) before publishing");
+  }
+  if (draft.status === "failed" && isNonRetryablePublishError(draft.errorMessage ?? "")) {
+    throw new Error("This error is not retryable. Fix configuration and re-approve.");
+  }
+
+  await publishSocialDraftRecord(db, draft);
+  revalidatePath("/admin");
+  revalidatePath(`/admin/social/${draftId}`);
+}
+
+export async function scheduleSocialDraftById(draftId: string, formData: FormData) {
+  await requireAuth();
+  const db = requireDb();
+  const when = formData.get("scheduledAt");
+  if (typeof when !== "string" || !when) throw new Error("Missing schedule time");
+
+  const scheduledAt = new Date(when);
+  if (Number.isNaN(scheduledAt.getTime())) throw new Error("Invalid schedule time");
+
+  await db
+    .update(socialDrafts)
+    .set({
+      status: "scheduled",
+      scheduledAt,
+      updatedAt: new Date(),
+    })
+    .where(and(eq(socialDrafts.id, draftId), eq(socialDrafts.status, "approved")));
+
+  revalidatePath("/admin");
+  revalidatePath(`/admin/social/${draftId}`);
+}
+
+export async function publishDueScheduledSocialDraftsAction() {
+  await requireAuth();
+  const db = requireDb();
+  const result = await publishDueScheduledDrafts(db);
+  revalidatePath("/admin");
+  return result;
+}
+
+export async function regenerateSocialDraftById(draftId: string) {
+  await requireAuth();
+  const db = requireDb();
+
+  const data = await db
+    .select()
+    .from(socialDrafts)
+    .innerJoin(newsItems, eq(newsItems.id, socialDrafts.newsItemId))
+    .where(eq(socialDrafts.id, draftId))
+    .limit(1);
+
+  const row = data[0];
+  if (!row) throw new Error("Draft not found");
+  if (row.social_drafts.status !== "needs_review" && row.social_drafts.status !== "failed") {
+    throw new Error("Can only regenerate drafts in needs_review or failed");
+  }
+
+  const item = row.news_items;
+  const extracted = await fetchAndExtractArticle(item.sourceUrl);
+  const { output, promptVersion } = await generateSocialDraft({
+    sourceName: item.sourceName,
+    sourceUrl: item.sourceUrl,
+    title: extracted.title ?? item.title,
+    extractedText: [
+      extracted.content,
+      item.description ? `\n\nResumen RSS:\n${item.description}` : "",
+    ].join(""),
+  });
+
+  await db
+    .update(socialDrafts)
+    .set({
+      format: output.recommended_format,
+      safetyClassification: output.safety_classification,
+      safetyReason: output.reason,
+      newsSummaryInternal: output.news_summary_internal,
+      editorialAngle: output.editorial_angle,
+      headline: output.story_headline,
+      subtext: output.story_subtext,
+      donZopiReaction: output.don_zopi_reaction ?? "",
+      smokeLevel: output.smoke_level,
+      caption: output.instagram_caption,
+      hashtags: output.hashtags ?? [],
+      sourceCredit: output.source_credit,
+      linkStickerUrl: output.link_sticker_url,
+      status: "needs_review",
+      renderedAssetUrl: null,
+      errorMessage: null,
+      llmPromptVersion: promptVersion,
+      updatedAt: new Date(),
+    })
+    .where(eq(socialDrafts.id, draftId));
+
+  revalidatePath("/admin");
+  revalidatePath(`/admin/social/${draftId}`);
 }

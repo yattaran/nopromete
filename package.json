@@ -13,22 +13,23 @@
     "db:seed": "tsx scripts/seed.ts",
     "test:rss": "tsx scripts/test-rss.ts",
     "test:rss:extract": "tsx scripts/test-rss.ts --extract",
-    "ingest": "tsx scripts/ingest.ts",
-    "re-evaluate": "tsx scripts/re-evaluate-don-zopi.ts"
+    "test:llm": "tsx scripts/test-llm.ts"
   },
   "dependencies": {
+    "@fontsource/barlow": "^5.2.8",
+    "@fontsource/source-serif-4": "^5.2.9",
+    "@google/generative-ai": "^0.24.1",
     "@mozilla/readability": "^0.6.0",
     "@neondatabase/serverless": "^1.1.0",
     "cheerio": "^1.2.0",
     "drizzle-orm": "^0.45.2",
+    "groq-sdk": "^1.2.0",
     "jsdom": "^27.0.1",
     "next": "16.2.6",
     "next-auth": "^5.0.0-beta.31",
-    "@google/generative-ai": "^0.24.1",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "rss-parser": "^3.13.0",
-    "slugify": "^1.6.9",
     "zod": "^4.4.3"
   },
   "devDependencies": {

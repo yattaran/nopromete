@@ -1,9 +1,11 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { logoutAction, runIngestAction } from "@/app/admin/actions";
+import { logoutAction } from "@/app/admin/actions";
 import { isMissingColumnError } from "@/lib/db/errors";
-import { getPostsByStatus, hasDatabase } from "@/lib/data/posts";
-import { PostStatusBadge } from "@/components/admin/PostStatusBadge";
+import { hasDatabase } from "@/lib/db";
+import { getSocialCounts, getSocialDraftsByStatus } from "@/lib/data/social";
+import { SocialControls } from "@/components/admin/SocialControls";
+import { getSocialLLMConfig } from "@/lib/llm/social-provider-info";
 
 export const metadata: Metadata = {
   title: "Admin",
@@ -13,13 +15,21 @@ export const metadata: Metadata = {
 export default async function AdminPage() {
   const dbReady = hasDatabase();
   let schemaOutOfDate = false;
-  let pending: Awaited<ReturnType<typeof getPostsByStatus>> = [];
-  let approved: Awaited<ReturnType<typeof getPostsByStatus>> = [];
+  let socialNeedsReview: Awaited<ReturnType<typeof getSocialDraftsByStatus>> = [];
+  let socialApproved: Awaited<ReturnType<typeof getSocialDraftsByStatus>> = [];
+  let socialPublished: Awaited<ReturnType<typeof getSocialDraftsByStatus>> = [];
+  let socialScheduled: Awaited<ReturnType<typeof getSocialDraftsByStatus>> = [];
+  let socialFailed: Awaited<ReturnType<typeof getSocialDraftsByStatus>> = [];
+  let socialCounts = { sourcesCount: 0, newsItemsCount: 0 };
 
   if (dbReady) {
     try {
-      pending = await getPostsByStatus("pending_review");
-      approved = await getPostsByStatus("approved");
+      socialNeedsReview = await getSocialDraftsByStatus("needs_review");
+      socialApproved = await getSocialDraftsByStatus("approved");
+      socialScheduled = await getSocialDraftsByStatus("scheduled");
+      socialPublished = await getSocialDraftsByStatus("published");
+      socialFailed = await getSocialDraftsByStatus("failed");
+      socialCounts = await getSocialCounts();
     } catch (err) {
       if (isMissingColumnError(err, "is_positive_news")) {
         schemaOutOfDate = true;
@@ -29,13 +39,21 @@ export default async function AdminPage() {
     }
   }
 
+  const llm = getSocialLLMConfig();
+
   return (
     <div className="mx-auto max-w-5xl px-4 py-10">
       <div className="mb-8 flex items-center justify-between gap-4">
         <div>
-          <h1 className="font-serif text-3xl font-bold text-ink">Panel editorial</h1>
+          <h1 className="font-serif text-3xl font-bold text-ink">Panel social</h1>
           <p className="mt-1 text-sm text-muted">
-            Revisá borradores RSS + LLM antes de publicar.
+            Ingesta → draft LLM → revisión → asset → publicación (manual).
+          </p>
+          <p className="mt-1 text-xs text-muted">
+            LLM:{" "}
+            <span className="font-mono text-ink">
+              {llm.configured ? `${llm.provider} / ${llm.model}` : `${llm.provider} (sin API key)`}
+            </span>
           </p>
         </div>
         <form action={logoutAction}>
@@ -59,89 +77,102 @@ export default async function AdminPage() {
 
       {schemaOutOfDate && (
         <p className="mb-8 border border-accent/40 bg-tan/40 p-4 text-sm text-ink">
-          Falta la columna <code className="font-mono">is_positive_news</code> en Neon.
-          Ejecutá <code className="font-mono">npm run db:push</code> o corré el SQL en{" "}
-          <code className="font-mono">drizzle/manual/add-is-positive-news.sql</code> desde el
-          SQL Editor de Neon, y recargá esta página.
+          Schema desactualizado. Ejecutá <code className="font-mono">npm run db:push</code> y
+          recargá.
         </p>
       )}
 
       {dbReady && (
-        <form
-          action={async () => {
-            "use server";
-            await runIngestAction();
-          }}
-          className="mb-8"
-        >
-          <button
-            type="submit"
-            className="bg-accent px-4 py-2 text-xs font-semibold tracking-wide text-paper uppercase"
-          >
-            Ejecutar ingesta manual
-          </button>
-        </form>
+        <SocialControls
+          sourcesCount={socialCounts.sourcesCount}
+          newsItemsCount={socialCounts.newsItemsCount}
+        />
       )}
 
-      <section className="mb-10">
-        <h2 className="mb-4 font-serif text-xl font-bold text-ink">
-          Pendientes de revisión ({pending.length})
-        </h2>
-        {pending.length === 0 ? (
-          <p className="text-sm text-muted">No hay borradores pendientes.</p>
-        ) : (
-          <ul className="divide-y divide-ink/15 border border-ink/15">
-            {pending.map((post) => (
-              <li key={post.id} className="flex items-center justify-between gap-4 p-4">
-                <div>
-                  <PostStatusBadge status={post.status} />
-                  <p className="mt-1 font-serif font-bold text-ink">{post.headline}</p>
-                  <p className="mt-1 text-xs text-muted">
-                    {post.sourceName} · {post.category}
-                  </p>
-                  {post.riskFlags.length > 0 && (
-                    <p className="mt-2 text-xs text-accent">
-                      Flags: {post.riskFlags.join(", ")}
-                    </p>
-                  )}
-                </div>
-                <Link
-                  href={`/admin/posts/${post.id}`}
-                  className="shrink-0 bg-ink px-4 py-2 text-xs font-semibold tracking-wide text-paper uppercase"
-                >
-                  Revisar
-                </Link>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+      <DraftList
+        title={`Pendientes de revisión (${socialNeedsReview.length})`}
+        empty="No hay drafts pendientes."
+        drafts={socialNeedsReview}
+        cta="Revisar"
+        ctaClass="bg-accent text-paper"
+      />
 
-      <section>
-        <h2 className="mb-4 font-serif text-xl font-bold text-ink">
-          Aprobados ({approved.length})
-        </h2>
-        {approved.length === 0 ? (
-          <p className="text-sm text-muted">No hay posts aprobados esperando publicación.</p>
-        ) : (
-          <ul className="divide-y divide-ink/15 border border-ink/15">
-            {approved.map((post) => (
-              <li key={post.id} className="flex items-center justify-between gap-4 p-4">
-                <div>
-                  <PostStatusBadge status={post.status} />
-                  <p className="mt-1 font-serif font-bold text-ink">{post.headline}</p>
-                </div>
-                <Link
-                  href={`/admin/posts/${post.id}`}
-                  className="shrink-0 border border-ink px-4 py-2 text-xs font-semibold tracking-wide uppercase"
-                >
-                  Publicar
-                </Link>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+      <DraftList
+        title={`Aprobados (${socialApproved.length})`}
+        empty="No hay drafts aprobados."
+        drafts={socialApproved}
+        cta="Ver"
+        ctaClass="border border-ink"
+      />
+
+      <DraftList
+        title={`Programados (${socialScheduled.length})`}
+        empty="No hay drafts programados."
+        drafts={socialScheduled}
+        cta="Ver"
+        ctaClass="border border-ink"
+      />
+
+      <DraftList
+        title={`Fallidos (${socialFailed.length})`}
+        empty="No hay drafts fallidos."
+        drafts={socialFailed}
+        cta="Revisar"
+        ctaClass="bg-accent text-paper"
+      />
+
+      <DraftList
+        title={`Publicados (${socialPublished.length})`}
+        empty="Todavía no hay publicaciones."
+        drafts={socialPublished}
+        cta="Ver"
+        ctaClass="border border-ink/30"
+      />
     </div>
+  );
+}
+
+function DraftList({
+  title,
+  empty,
+  drafts,
+  cta,
+  ctaClass,
+}: {
+  title: string;
+  empty: string;
+  drafts: Awaited<ReturnType<typeof getSocialDraftsByStatus>>;
+  cta: string;
+  ctaClass: string;
+}) {
+  return (
+    <section className="mb-10">
+      <h2 className="mb-4 font-serif text-xl font-bold text-ink">{title}</h2>
+      {drafts.length === 0 ? (
+        <p className="text-sm text-muted">{empty}</p>
+      ) : (
+        <ul className="divide-y divide-ink/15 border border-ink/15">
+          {drafts.map((draft) => (
+            <li key={draft.id} className="flex items-center justify-between gap-4 p-4">
+              <div>
+                <p className="text-xs font-semibold tracking-wide uppercase text-muted">
+                  {draft.platform} · {draft.format} · {draft.status}
+                </p>
+                <p className="mt-1 font-serif font-bold text-ink">{draft.headline || "(sin titular)"}</p>
+                {draft.publishedPlatformId && (
+                  <p className="mt-1 text-xs text-muted">IG: {draft.publishedPlatformId}</p>
+                )}
+              </div>
+              <Link
+                href={`/admin/social/${draft.id}`}
+                className={`shrink-0 px-4 py-2 text-xs font-semibold tracking-wide uppercase ${ctaClass}`}
+              >
+                {cta}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
   );
 }

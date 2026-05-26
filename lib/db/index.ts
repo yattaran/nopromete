@@ -20,6 +20,10 @@ export function getDatabaseUrl(): string | null {
   return isValidDatabaseUrl(url) ? url! : null;
 }
 
+export function hasDatabase(): boolean {
+  return Boolean(getDatabaseUrl());
+}
+
 export function getDb() {
   const url = getDatabaseUrl();
   if (!url) return null;

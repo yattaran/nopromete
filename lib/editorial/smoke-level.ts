@@ -59,4 +59,9 @@ export function formatSmokeLevel(level: SmokeLevel): string {
   return `${emoji} ${label}`;
 }
 
+export function resolveSmokeLevel(value: string | null | undefined): SmokeLevel {
+  if (value && isSmokeLevel(value)) return value;
+  return defaultSmokeLevel;
+}
+
 export const defaultSmokeLevel: SmokeLevel = "sospechoso";

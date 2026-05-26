@@ -21,7 +21,17 @@ function loadEnvLocal() {
 const FEEDS = [
   { name: "La Nación", url: "https://www.nacion.com/arc/outboundfeeds/rss/?outputType=xml" },
   { name: "Delfino.cr", url: "https://delfino.cr/feed" },
+  { name: "The Tico Times", url: "https://feeds.feedburner.com/theticotimes" },
+  { name: "Diario Extra", url: "https://www.diarioextra.com/feed/" },
+  { name: "BBC World (internacional)", url: "https://feeds.bbci.co.uk/news/world/rss.xml" },
   { name: "Semanario Universidad", url: "https://semanariouniversidad.com/feed/" },
+];
+
+/** Sin RSS estable hoy — se dejan comentados para probe manual. */
+const SKIPPED_FEEDS = [
+  { name: "CR Hoy", url: "https://www.crhoy.com/feed/", reason: "404 — sin feed público" },
+  { name: "La República", url: "https://www.larepublica.net/feed/", reason: "404 — sin feed público" },
+  { name: "Reuters", url: "https://feeds.reuters.com/reuters/worldNews", reason: "dominio caído" },
 ];
 
 async function main() {
@@ -56,9 +66,16 @@ async function main() {
     }
   }
 
+  if (SKIPPED_FEEDS.length > 0) {
+    console.log("\n— Omitidos (sin RSS estable):");
+    for (const feed of SKIPPED_FEEDS) {
+      console.log(`   · ${feed.name}: ${feed.reason}`);
+    }
+  }
+
   if (!extractOne) {
     console.log("\nTip: agregá --extract para probar Readability en el primer artículo de cada feed.");
-    console.log("Tip: npm run ingest -- --max=1 para ingerir y guardar borradores en Neon.");
+    console.log("Tip: npx tsx scripts/probe-rss-urls.ts para probar URLs candidatas.");
   }
 }
 

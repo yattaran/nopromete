@@ -1,9 +1,8 @@
 import { readFileSync, existsSync } from "fs";
 import { resolve } from "path";
-import { eq } from "drizzle-orm";
-import { articles as mockArticles } from "../lib/mock/articles";
+import { inArray } from "drizzle-orm";
 import { requireDb } from "../lib/db";
-import { posts, rawArticles, sources } from "../lib/db/schema";
+import { sources } from "../lib/db/schema";
 
 function loadEnvLocal() {
   const path = resolve(process.cwd(), ".env.local");
@@ -20,85 +19,45 @@ function loadEnvLocal() {
   }
 }
 
+/** Feeds verificados con `npm run test:rss` / `npx tsx scripts/probe-rss-urls.ts`. */
 const DEFAULT_SOURCES = [
   { name: "La Nación", feedUrl: "https://www.nacion.com/arc/outboundfeeds/rss/?outputType=xml" },
   { name: "Delfino.cr", feedUrl: "https://delfino.cr/feed" },
+  { name: "The Tico Times", feedUrl: "https://feeds.feedburner.com/theticotimes" },
+  { name: "Diario Extra", feedUrl: "https://www.diarioextra.com/feed/" },
+  // Reuters cerró feeds.reuters.com; BBC World como wire internacional.
+  { name: "BBC World (internacional)", feedUrl: "https://feeds.bbci.co.uk/news/world/rss.xml" },
+];
+
+/** URLs que probamos y no funcionan — desactivar si quedaron de un seed anterior. */
+const DEPRECATED_FEED_URLS = [
+  "https://ticotimes.net/feed",
+  "https://www.crhoy.com/feed/",
+  "https://crhoy.com/feed/",
+  "https://www.larepublica.net/feed/",
+  "https://larepublica.net/feed/",
+  "https://feeds.reuters.com/reuters/worldNews",
 ];
 
 async function seed() {
   loadEnvLocal();
   const db = requireDb();
 
+  if (DEPRECATED_FEED_URLS.length > 0) {
+    await db
+      .update(sources)
+      .set({ active: false })
+      .where(inArray(sources.feedUrl, DEPRECATED_FEED_URLS));
+  }
+
   for (const source of DEFAULT_SOURCES) {
     await db.insert(sources).values(source).onConflictDoNothing({ target: sources.feedUrl });
   }
 
-  const [defaultSource] = await db.select().from(sources).limit(1);
-  if (!defaultSource) {
-    throw new Error("No sources available after seed");
-  }
-
-  for (const article of mockArticles) {
-    const existingPost = await db
-      .select({ id: posts.id })
-      .from(posts)
-      .where(eq(posts.slug, article.slug))
-      .limit(1);
-
-    if (existingPost.length > 0) continue;
-
-    let rawId: string | undefined;
-
-    const [insertedRaw] = await db
-      .insert(rawArticles)
-      .values({
-        sourceId: defaultSource.id,
-        sourceUrl: article.sourceUrl,
-        title: article.headline,
-        extractedContent: article.factualSummary,
-        imageUrl: article.heroImage.startsWith("http") ? article.heroImage : null,
-        publishedAt: new Date(article.publishedAt),
-      })
-      .onConflictDoNothing({ target: rawArticles.sourceUrl })
-      .returning({ id: rawArticles.id });
-
-    if (insertedRaw) {
-      rawId = insertedRaw.id;
-    } else {
-      const [existingRaw] = await db
-        .select({ id: rawArticles.id })
-        .from(rawArticles)
-        .where(eq(rawArticles.sourceUrl, article.sourceUrl))
-        .limit(1);
-      rawId = existingRaw?.id;
-    }
-
-    if (!rawId) continue;
-
-    await db.insert(posts).values({
-      rawArticleId: rawId,
-      slug: article.slug,
-      category: article.category,
-      status: "published",
-      headline: article.headline,
-      summary: article.summary,
-      factualSummary: article.factualSummary,
-      whyItMatters: article.whyItMatters,
-      commentary: article.donZopiQuote,
-      isPositiveNews: article.isPositiveNews ?? false,
-      donZopiQuote: article.donZopiQuote,
-      donZopiVerdict: article.donZopiVerdict,
-      smokeLevel: article.smokeLevel,
-      sourceUrl: article.sourceUrl,
-      sourceName: article.sourceName,
-      heroImage: article.heroImage,
-      featured: article.featured ?? false,
-      viewCount: article.viewCount ?? 0,
-      publishedAt: new Date(article.publishedAt),
-    });
-  }
-
-  console.log("Seed complete: RSS sources + mock articles as published posts.");
+  console.log("Seed complete: RSS sources.");
+  console.log(
+    "Nota: CR Hoy y La República no tienen RSS público estable (404/HTML). Si los habilitan, agregarlos a DEFAULT_SOURCES.",
+  );
 }
 
 seed().catch((err) => {

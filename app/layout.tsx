@@ -4,11 +4,11 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: {
-    default: "No Promete — Noticias sin promesas",
+    default: "No Promete",
     template: "%s | No Promete",
   },
   description:
-    "Noticias de Costa Rica y el mundo, resumidas con sarcasmo a lo tico. Siempre con enlace a la fuente original.",
+    "Comentario y sátira tica sobre noticias reales. Seguinos en redes; siempre con enlace a la fuente original.",
 };
 
 export default function RootLayout({
