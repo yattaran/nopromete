@@ -7,11 +7,8 @@ import { auth, signOut } from "@/lib/auth";
 import { getDatabaseUrl, requireDb } from "@/lib/db";
 import { newsItems, socialDrafts } from "@/lib/db/schema";
 import { runSocialIngest } from "@/lib/ingest/social-pipeline";
-import { fetchAndExtractArticle } from "@/lib/ingest/extract";
-import { isSmokeLevel, resolveSmokeLevel } from "@/lib/editorial/smoke-level";
+import { isSmokeLevel } from "@/lib/editorial/smoke-level";
 import { generateSocialDraft } from "@/lib/llm/social-generate";
-import { signAssetToken } from "@/lib/social/assets";
-import { ASSET_TEMPLATE_VERSION } from "@/lib/social/asset-brand";
 import {
   isNonRetryablePublishError,
   publishDueScheduledDrafts,
@@ -60,6 +57,7 @@ export async function generateSocialDraftsAction(options?: { maxDrafts?: number 
   for (const row of candidates) {
     const item = row.news_items;
     try {
+      const { fetchAndExtractArticle } = await import("@/lib/ingest/extract");
       const extracted = await fetchAndExtractArticle(item.sourceUrl);
       const { output, promptVersion } = await generateSocialDraft({
         sourceName: item.sourceName,
@@ -191,37 +189,6 @@ export async function rejectSocialDraftById(draftId: string) {
   redirect("/admin");
 }
 
-export async function renderSocialAssetById(draftId: string) {
-  await requireAuth();
-  const db = requireDb();
-
-  const [draftRow] = await db
-    .select({ smokeLevel: socialDrafts.smokeLevel })
-    .from(socialDrafts)
-    .where(eq(socialDrafts.id, draftId))
-    .limit(1);
-  if (!draftRow) throw new Error("Draft not found");
-
-  const baseUrl = process.env.NEXTAUTH_URL ?? "http://localhost:3000";
-  const exp = Date.now() + 1000 * 60 * 60 * 24 * 30;
-  const token = signAssetToken({ draftId, exp });
-  const smoke = resolveSmokeLevel(draftRow.smokeLevel);
-  const renderedAssetUrl = `${baseUrl}/api/assets/social/${draftId}?token=${token}&smoke=${smoke}`;
-
-  await db
-    .update(socialDrafts)
-    .set({
-      renderedAssetUrl,
-      assetTemplateVersion: ASSET_TEMPLATE_VERSION,
-      updatedAt: new Date(),
-    })
-    .where(eq(socialDrafts.id, draftId));
-
-  revalidatePath("/admin");
-  revalidatePath(`/admin/social/${draftId}`);
-  return { renderedAssetUrl };
-}
-
 export async function publishSocialDraftToInstagramById(draftId: string) {
   await requireAuth();
   const db = requireDb();
@@ -288,6 +255,7 @@ export async function regenerateSocialDraftById(draftId: string) {
   }
 
   const item = row.news_items;
+  const { fetchAndExtractArticle } = await import("@/lib/ingest/extract");
   const extracted = await fetchAndExtractArticle(item.sourceUrl);
   const { output, promptVersion } = await generateSocialDraft({
     sourceName: item.sourceName,

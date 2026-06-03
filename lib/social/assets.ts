@@ -16,7 +16,11 @@ function getAssetSecret(): string | null {
 
 export function signAssetToken(payload: { draftId: string; exp: number }) {
   const secret = getAssetSecret();
-  if (!secret) throw new Error("ASSET_SIGNING_SECRET is not configured");
+  if (!secret) {
+    throw new Error(
+      "Asset signing secret missing. Set AUTH_SECRET (or ASSET_SIGNING_SECRET) in production.",
+    );
+  }
   const data = `${payload.draftId}.${payload.exp}`;
   const sig = crypto.createHmac("sha256", secret).update(data).digest("base64url");
   return `${payload.exp}.${sig}`;

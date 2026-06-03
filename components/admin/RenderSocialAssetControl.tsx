@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
-import { renderSocialAssetById } from "@/app/admin/actions";
+import { renderSocialAssetById } from "@/app/admin/render-asset-action";
 
 type State =
   | { ok: true; renderedAssetUrl: string }
