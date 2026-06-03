@@ -1,6 +1,6 @@
 import { Readability } from "@mozilla/readability";
 import * as cheerio from "cheerio";
-import { JSDOM } from "jsdom";
+import { parseHTML } from "linkedom";
 
 export interface ExtractedArticle {
   title: string;
@@ -24,8 +24,8 @@ export async function fetchAndExtractArticle(url: string): Promise<ExtractedArti
   }
 
   const rawHtml = await response.text();
-  const dom = new JSDOM(rawHtml, { url });
-  const reader = new Readability(dom.window.document);
+  const { document } = parseHTML(rawHtml, { url });
+  const reader = new Readability(document);
   const article = reader.parse();
 
   const $ = cheerio.load(rawHtml);
